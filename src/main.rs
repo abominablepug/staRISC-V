@@ -116,8 +116,7 @@ impl CPU {
                         let x = self.registers[rs1 as usize];
                         let y = self.registers[rs2 as usize];
 
-                        self.registers[rd as usize] =
-                            if (x as usize) < (y as usize) { 1 } else { 0 };
+                        self.registers[rd as usize] = if (x as u32) < (y as u32) { 1 } else { 0 };
                     }
                     _ => {
                         // Impossible funct3 state
@@ -126,30 +125,71 @@ impl CPU {
                 }
             }
             0x13 => {
+                let imm = ((funct7 << 5) & rs2) as i32;
                 match funct3 {
-                    0x0 => { // ADDI
+                    0x0 => {
+                        // ADDI
+                        let x = self.registers[rs1 as usize];
+
+                        self.registers[rd as usize] = x.wrapping_add(imm);
                     }
-                    0x4 => { // XORI
+                    0x4 => {
+                        // XORI
+                        let x = self.registers[rs1 as usize];
+
+                        self.registers[rd as usize] = x ^ imm;
                     }
-                    0x6 => { // ORI
+                    0x6 => {
+                        // ORI
+                        let x = self.registers[rs1 as usize];
+
+                        self.registers[rd as usize] = x | imm;
                     }
-                    0x7 => { // ANDI
+                    0x7 => {
+                        // ANDI
+                        let x = self.registers[rs1 as usize];
+
+                        self.registers[rd as usize] = x & imm;
                     }
-                    0x1 => { // SLLI
+                    0x1 => {
+                        // SLLI
+                        let x = self.registers[rs1 as usize];
+
+                        self.registers[rd as usize] = x << imm;
                     }
                     0x5 => match funct7 {
-                        0x00 => { // SRLI
+                        0x00 => {
+                            // SRLI
+                            let x = self.registers[rs1 as usize];
+
+                            self.registers[rd as usize] = (x as u32 >> imm) as i32;
                         }
-                        0x20 => { // SRAI
+                        0x20 => {
+                            // SRAI
+                            let x = self.registers[rs1 as usize];
+
+                            self.registers[rd as usize] = x >> imm;
                         }
-                        _ => { // Incorrect funct7
+                        _ => {
+                            // Incorrect funct7
+                            println!("Incorrect funct7 provided (either 0x00 or 0x20)");
                         }
                     },
-                    0x2 => { // SLT
+                    0x2 => {
+                        // SLT
+                        let x = self.registers[rs1 as usize];
+
+                        self.registers[rd as usize] = if x < imm { 1 } else { 0 };
                     }
-                    0x3 => { // SLTU
+                    0x3 => {
+                        // SLTU
+                        let x = self.registers[rs1 as usize];
+
+                        self.registers[rd as usize] = if (x as u32) < (imm as u32) { 1 } else { 0 };
                     }
-                    _ => { // Incorrect funct3
+                    _ => {
+                        // Impossible funct3 state
+                        unreachable!("funct3 is unable to exceed 3 bits");
                     }
                 }
             }
