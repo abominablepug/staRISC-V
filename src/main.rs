@@ -35,34 +35,93 @@ impl CPU {
             0x33 => {
                 match funct3 {
                     0x0 => match funct7 {
-                        0x00 => { // ADD
+                        0x00 => {
+                            // ADD
+                            let x = self.registers[rs1 as usize];
+                            let y = self.registers[rs2 as usize];
+                            let total = x.wrapping_add(y);
+
+                            self.registers[rd as usize] = total;
                         }
-                        0x20 => { // SUB
+                        0x20 => {
+                            // SUB
+                            let x = self.registers[rs1 as usize];
+                            let y = self.registers[rs2 as usize];
+                            let total = x.wrapping_sub(y);
+
+                            self.registers[rd as usize] = total;
                         }
-                        _ => { // Incorrect funct7
+                        _ => {
+                            // Incorrect funct7
+                            println!("Incorrect funct7 provided (either 0x00 or 0x20)");
                         }
                     },
-                    0x4 => { // XOR
+                    0x4 => {
+                        // XOR
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        self.registers[rd as usize] = x ^ y;
                     }
-                    0x6 => { // OR
+                    0x6 => {
+                        // OR
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        self.registers[rd as usize] = x | y;
                     }
-                    0x7 => { // AND
+                    0x7 => {
+                        // AND
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        self.registers[rd as usize] = x & y;
                     }
-                    0x1 => { // SLR
+                    0x1 => {
+                        // SLR
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        self.registers[rd as usize] = x << y;
                     }
                     0x5 => match funct7 {
-                        0x00 => { // SRL
+                        0x00 => {
+                            // SRL
+                            let x = self.registers[rs1 as usize];
+                            let y = self.registers[rs2 as usize];
+
+                            self.registers[rd as usize] = (x as u32 >> y) as i32;
                         }
-                        0x20 => { // SRA
+                        0x20 => {
+                            // SRA
+                            let x = self.registers[rs1 as usize];
+                            let y = self.registers[rs2 as usize];
+
+                            self.registers[rd as usize] = x >> y;
                         }
-                        _ => { // Incorrect funct7
+                        _ => {
+                            // Incorrect funct7
+                            println!("Incorrect funct7 provided (either 0x00 or 0x20)");
                         }
                     },
-                    0x2 => { // SLT
+                    0x2 => {
+                        // SLT
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        self.registers[rd as usize] = if x < y { 1 } else { 0 };
                     }
-                    0x3 => { // SLTU
+                    0x3 => {
+                        // SLTU
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        self.registers[rd as usize] =
+                            if (x as usize) < (y as usize) { 1 } else { 0 };
                     }
-                    _ => { // Incorrect funct3
+                    _ => {
+                        // Impossible funct3 state
+                        unreachable!("funct3 is unable to exceed 3 bits");
                     }
                 }
             }
