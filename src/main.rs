@@ -369,7 +369,17 @@ impl CPU {
                 self.registers[rd as usize] = (self.pc + 4) as i32;
                 self.pc += imm as u32;
             }
-            0x67 => { // JALR
+            0x67 => {
+                // JALR
+                let immu = (funct7 << 5) & rs2;
+                let imm = ((immu << 20) as i32) >> 20;
+
+                let x = self.registers[rs1 as usize];
+                let target_u = imm.wrapping_add(x);
+                let target = target_u & 0xfffd;
+
+                self.registers[rd as usize] = (self.pc + 4) as i32;
+                self.pc = target as u32;
             }
             0x37 => { // LUI
             }
