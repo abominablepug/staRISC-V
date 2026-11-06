@@ -78,7 +78,7 @@ impl CPU {
                     0x1 => {
                         // SLR
                         let x = self.registers[rs1 as usize];
-                        let y = self.registers[rs2 as usize];
+                        let y = self.registers[rs2 as usize] & 0x1f;
 
                         self.registers[rd as usize] = x << y;
                     }
@@ -86,14 +86,14 @@ impl CPU {
                         0x00 => {
                             // SRL
                             let x = self.registers[rs1 as usize];
-                            let y = self.registers[rs2 as usize];
+                            let y = self.registers[rs2 as usize] & 0x1f;
 
                             self.registers[rd as usize] = (x as u32 >> y) as i32;
                         }
                         0x20 => {
                             // SRA
                             let x = self.registers[rs1 as usize];
-                            let y = self.registers[rs2 as usize];
+                            let y = self.registers[rs2 as usize] & 0x1f;
 
                             self.registers[rd as usize] = x >> y;
                         }
@@ -155,20 +155,20 @@ impl CPU {
                         // SLLI
                         let x = self.registers[rs1 as usize];
 
-                        self.registers[rd as usize] = x << imm;
+                        self.registers[rd as usize] = x << rs2;
                     }
                     0x5 => match funct7 {
                         0x00 => {
                             // SRLI
                             let x = self.registers[rs1 as usize];
 
-                            self.registers[rd as usize] = (x as u32 >> imm) as i32;
+                            self.registers[rd as usize] = (x as u32 >> rs2) as i32;
                         }
                         0x20 => {
                             // SRAI
                             let x = self.registers[rs1 as usize];
 
-                            self.registers[rd as usize] = x >> imm;
+                            self.registers[rd as usize] = x >> rs2;
                         }
                         _ => {
                             // Incorrect funct7
@@ -264,7 +264,11 @@ impl CPU {
                         let y = self.registers[rs2 as usize] & 0x00FF;
                         let bytes = y.to_ne_bytes();
                         for i in 0..1 {
-                            self.memory[e_add + i] = bytes[i];
+                            if e_add + i == 0x1000_0000 {
+                                println!("{}", bytes[i] as char);
+                            } else {
+                                self.memory[e_add + i] = bytes[i];
+                            }
                         }
                     }
                     0x1 => {
@@ -275,7 +279,11 @@ impl CPU {
                         let y = self.registers[rs2 as usize];
                         let bytes = y.to_ne_bytes();
                         for i in 0..2 {
-                            self.memory[e_add + i] = bytes[i];
+                            if e_add + i == 0x1000_0000 {
+                                println!("{}", bytes[i] as char);
+                            } else {
+                                self.memory[e_add + i] = bytes[i];
+                            }
                         }
                     }
                     0x2 => {
@@ -286,7 +294,11 @@ impl CPU {
                         let y = self.registers[rs2 as usize];
                         let bytes = y.to_ne_bytes();
                         for i in 0..4 {
-                            self.memory[e_add + i] = bytes[i];
+                            if e_add + i == 0x1000_0000 {
+                                println!("{}", bytes[i] as char);
+                            } else {
+                                self.memory[e_add + i] = bytes[i];
+                            }
                         }
                     }
                     _ => {
@@ -425,6 +437,7 @@ impl CPU {
                 );
             }
         }
+        self.registers[0] = 0;
     }
 }
 
@@ -453,7 +466,6 @@ fn main() {
             break;
         }
         cpu.step();
-        cpu.registers[0] = 0;
         cycles += 1;
     }
 
