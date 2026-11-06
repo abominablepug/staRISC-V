@@ -250,14 +250,44 @@ impl CPU {
                 }
             }
             0x23 => {
+                let imm = ((funct7 << 5) & rd) as i32;
                 match funct3 {
-                    0x0 => { // SB
+                    0x0 => {
+                        // SB
+                        let x = self.registers[rs1 as usize];
+                        let e_add = imm.wrapping_add(x) as usize;
+
+                        let y = self.registers[rs2 as usize] & 0x000F;
+                        let bytes = y.to_ne_bytes();
+                        for i in 0..4 {
+                            self.memory[e_add + i] = bytes[i];
+                        }
                     }
-                    0x1 => { // SH
+                    0x1 => {
+                        // SH
+                        let x = self.registers[rs1 as usize];
+                        let e_add = imm.wrapping_add(x) as usize;
+
+                        let y = self.registers[rs2 as usize] & 0x00FF;
+                        let bytes = y.to_ne_bytes();
+                        for i in 0..4 {
+                            self.memory[e_add + i] = bytes[i];
+                        }
                     }
-                    0x2 => { // SW
+                    0x2 => {
+                        // SW
+                        let x = self.registers[rs1 as usize];
+                        let e_add = imm.wrapping_add(x) as usize;
+
+                        let y = self.registers[rs2 as usize];
+                        let bytes = y.to_ne_bytes();
+                        for i in 0..4 {
+                            self.memory[e_add + i] = bytes[i];
+                        }
                     }
-                    _ => { // Incorrect funct3
+                    _ => {
+                        // Incorrect funct3
+                        println!("Incorrect funct3 provided (either 0x0, 0x1, or 0x2)");
                     }
                 }
             }
