@@ -362,9 +362,9 @@ impl CPU {
             }
             0x6f => {
                 // JAL
-                let imm1 = ((((funct7 >> 6) << 5) & rs1) << 3) & funct3; // 20-12
-                let imm2 = ((((rs2 & 0x0001) << 6) & (funct7 & 0x003f)) << 4) & (rs2 >> 1); // 11-1
-                let imm = ((((imm1 << 11) & imm2) << 12) as i32) >> 12;
+                let imm1 = ((((funct7 >> 6) << 5) | rs1) << 3) | funct3; // 20-12
+                let imm2 = ((((rs2 & 0x0001) << 6) | (funct7 & 0x003f)) << 4) | (rs2 >> 1); // 11-1
+                let imm = ((((imm1 << 11) | imm2) << 12) as i32) >> 12;
 
                 self.registers[rd as usize] = (self.pc + 4) as i32;
                 self.pc += imm as u32;
