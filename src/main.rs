@@ -393,17 +393,12 @@ impl CPU {
 
                 self.registers[rd as usize] = (self.pc as i32) + (imm << 12) as i32;
             }
-            0x73 => {
-                match funct3 {
-                    0x0 => { // ECALL
-                    }
-                    0x1 => { // EBREAK
-                    }
-                    _ => { // Incorrect funct3
-                    }
-                }
+            _ => {
+                // Incorrect Opcode
+                println!(
+                    "Incorrect opcode provided (either 0x33, 0x13, 0x03, 0x23, 0x63, 0x6f, 0x67, 0x37, or 0x17)"
+                );
             }
-            _ => {}
         }
     }
 }
