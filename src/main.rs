@@ -6,14 +6,12 @@ struct CPU {
 
 impl CPU {
     fn new(memory: Vec<u8>) -> Self {
-        let mut cpu = CPU {
+        let cpu = CPU {
             pc: 0,
             registers: [0; 32],
             memory,
         };
 
-        cpu.registers[1] = 1;
-        cpu.registers[2] = 2;
         cpu
     }
 
@@ -123,6 +121,7 @@ impl CPU {
                         unreachable!("funct3 is unable to exceed 3 bits");
                     }
                 }
+                self.pc += 4;
             }
             0x13 => {
                 let immu = (funct7 << 5) | rs2;
@@ -193,6 +192,7 @@ impl CPU {
                         unreachable!("funct3 is unable to exceed 3 bits");
                     }
                 }
+                self.pc += 4;
             }
             0x03 => {
                 let immu = (funct7 << 5) | rs2;
@@ -250,9 +250,10 @@ impl CPU {
                         println!("Incorrect funct3 provided (either 0x0, 0x1, 0x2, 0x4, or 0x5)");
                     }
                 }
+                self.pc += 4;
             }
             0x23 => {
-                let immu = (funct7 << 5) | rs2;
+                let immu = (funct7 << 5) | rd;
                 let imm = ((immu << 20) as i32) >> 20;
                 match funct3 {
                     0x0 => {
@@ -260,9 +261,9 @@ impl CPU {
                         let x = self.registers[rs1 as usize];
                         let e_add = imm.wrapping_add(x) as usize;
 
-                        let y = self.registers[rs2 as usize] & 0x000F;
+                        let y = self.registers[rs2 as usize] & 0x00FF;
                         let bytes = y.to_ne_bytes();
-                        for i in 0..4 {
+                        for i in 0..1 {
                             self.memory[e_add + i] = bytes[i];
                         }
                     }
@@ -271,9 +272,9 @@ impl CPU {
                         let x = self.registers[rs1 as usize];
                         let e_add = imm.wrapping_add(x) as usize;
 
-                        let y = self.registers[rs2 as usize] & 0x00FF;
+                        let y = self.registers[rs2 as usize];
                         let bytes = y.to_ne_bytes();
-                        for i in 0..4 {
+                        for i in 0..2 {
                             self.memory[e_add + i] = bytes[i];
                         }
                     }
@@ -293,10 +294,16 @@ impl CPU {
                         println!("Incorrect funct3 provided (either 0x0, 0x1, or 0x2)");
                     }
                 }
+                self.pc += 4;
             }
             0x63 => {
-                let immu = (funct7 << 5) | rs2;
-                let imm = (((immu << 20) as i32) >> 20) as u32;
+                let imm1 = (instruction >> 31) & 0x01;
+                let imm2 = (instruction >> 7) & 0x01;
+                let imm3 = (instruction >> 25) & 0x3F;
+                let imm4 = (instruction >> 8) & 0x0F;
+
+                let immu = (imm1 << 12) | (imm2 << 11) | (imm3 << 5) | (imm4 << 1);
+                let imm = (((immu << 19) as i32) >> 19) as u32;
                 match funct3 {
                     0x0 => {
                         // BEQ
@@ -304,7 +311,9 @@ impl CPU {
                         let y = self.registers[rs2 as usize];
 
                         if x == y {
-                            self.pc += imm
+                            self.pc = self.pc.wrapping_add(imm);
+                        } else {
+                            self.pc += 4;
                         }
                     }
                     0x1 => {
@@ -313,7 +322,9 @@ impl CPU {
                         let y = self.registers[rs2 as usize];
 
                         if x != y {
-                            self.pc += imm
+                            self.pc = self.pc.wrapping_add(imm);
+                        } else {
+                            self.pc += 4;
                         }
                     }
                     0x4 => {
@@ -322,7 +333,9 @@ impl CPU {
                         let y = self.registers[rs2 as usize];
 
                         if x < y {
-                            self.pc += imm
+                            self.pc = self.pc.wrapping_add(imm);
+                        } else {
+                            self.pc += 4;
                         }
                     }
                     0x5 => {
@@ -331,7 +344,9 @@ impl CPU {
                         let y = self.registers[rs2 as usize];
 
                         if x >= y {
-                            self.pc += imm
+                            self.pc = self.pc.wrapping_add(imm);
+                        } else {
+                            self.pc += 4;
                         }
                     }
                     0x6 => {
@@ -340,7 +355,9 @@ impl CPU {
                         let y = self.registers[rs2 as usize];
 
                         if (x as u32) < (y as u32) {
-                            self.pc += imm
+                            self.pc = self.pc.wrapping_add(imm);
+                        } else {
+                            self.pc += 4;
                         }
                     }
                     0x7 => {
@@ -349,7 +366,9 @@ impl CPU {
                         let y = self.registers[rs2 as usize];
 
                         if (x as u32) >= (y as u32) {
-                            self.pc += imm
+                            self.pc = self.pc.wrapping_add(imm);
+                        } else {
+                            self.pc += 4;
                         }
                     }
                     _ => {
@@ -362,12 +381,16 @@ impl CPU {
             }
             0x6f => {
                 // JAL
-                let imm1 = ((((funct7 >> 6) << 5) | rs1) << 3) | funct3; // 20-12
-                let imm2 = ((((rs2 & 0x0001) << 6) | (funct7 & 0x003f)) << 4) | (rs2 >> 1); // 11-1
-                let imm = ((((imm1 << 11) | imm2) << 12) as i32) >> 12;
+                let imm1 = (instruction >> 31) & 0x01;
+                let imm2 = (instruction >> 21) & 0x3FF;
+                let imm3 = (instruction >> 20) & 0x01;
+                let imm4 = (instruction >> 12) & 0xFF;
+
+                let immu = (imm1 << 20) | (imm4 << 12) | (imm3 << 11) | (imm2 << 1);
+                let imm = ((immu << 11) as i32) >> 11;
 
                 self.registers[rd as usize] = (self.pc + 4) as i32;
-                self.pc += imm as u32;
+                self.pc = self.pc.wrapping_add(imm as u32);
             }
             0x67 => {
                 // JALR
@@ -376,7 +399,7 @@ impl CPU {
 
                 let x = self.registers[rs1 as usize];
                 let target_u = imm.wrapping_add(x);
-                let target = target_u & 0xfffd;
+                let target = target_u & !1;
 
                 self.registers[rd as usize] = (self.pc + 4) as i32;
                 self.pc = target as u32;
@@ -386,12 +409,14 @@ impl CPU {
                 let imm = (((((funct7 << 5) | rs2) << 5) | rs1) << 3) | funct3;
 
                 self.registers[rd as usize] = (imm << 12) as i32;
+                self.pc += 4;
             }
             0x17 => {
                 // AUIPC
                 let imm = (((((funct7 << 5) | rs2) << 5) | rs1) << 3) | funct3;
 
                 self.registers[rd as usize] = (self.pc as i32) + (imm << 12) as i32;
+                self.pc += 4;
             }
             _ => {
                 // Incorrect Opcode
@@ -404,14 +429,101 @@ impl CPU {
 }
 
 fn main() {
-    // ADD x3, x1, x2 = 0x002081B3
-    let memory: Vec<u8> = vec![0xB3, 0x81, 0x20, 0x00];
+    // 256 bytes of RAM initialized to 0
+    let mut memory: Vec<u8> = vec![0; 256];
 
+    let program: [u8; 112] = [
+        0xB7, 0xE0, 0xCD, 0xAB, 0x93, 0x80, 0x00, 0xFF, 0x13, 0x01, 0x80, 0x00, 0xB3, 0xD1, 0x20,
+        0x40, 0x33, 0xD2, 0x20, 0x00, 0xB3, 0xA2, 0x41, 0x00, 0x33, 0xB3, 0x41, 0x00, 0x93, 0x03,
+        0x00, 0x08, 0x23, 0xA0, 0x13, 0x00, 0x03, 0x84, 0x03, 0x00, 0x83, 0xC4, 0x03, 0x00, 0x03,
+        0x95, 0x23, 0x00, 0x83, 0xD5, 0x23, 0x00, 0x13, 0x06, 0x50, 0x05, 0xA3, 0x80, 0xC3, 0x00,
+        0x83, 0xA6, 0x03, 0x00, 0x13, 0x07, 0x30, 0x00, 0x93, 0x07, 0x00, 0x00, 0xB3, 0x87, 0xE7,
+        0x00, 0x13, 0x07, 0xF7, 0xFF, 0xE3, 0x1C, 0x07, 0xFE, 0x6F, 0x08, 0xC0, 0x00, 0x93, 0x08,
+        0x30, 0x06, 0x6F, 0x00, 0x00, 0x01, 0x17, 0x19, 0x00, 0x00, 0xB3, 0x09, 0xF9, 0x40, 0x67,
+        0x0A, 0x18, 0x00, 0x6F, 0x00, 0x00, 0x00,
+    ];
+    memory[0..program.len()].copy_from_slice(&program);
     let mut cpu = CPU::new(memory);
 
+    let mut cycles = 0;
+    println!("--- Executing Stress Test ---");
     loop {
+        if cpu.pc == 0x6C || cycles > 50 {
+            println!("Halted at PC: 0x{:02X} after {} cycles\n", cpu.pc, cycles);
+            break;
+        }
         cpu.step();
-        cpu.pc += 4;
         cpu.registers[0] = 0;
+        cycles += 1;
     }
+
+    println!("--- Register Verification ---");
+    println!(
+        "x1  (LUI + ADDI) : {:11} (Expected: -1412571152 / 0xABCDDFF0)",
+        cpu.registers[1]
+    );
+    println!(
+        "x3  (SRA)        : {:11} (Expected:    -5517857 / 0xFFABCDDF)",
+        cpu.registers[3]
+    );
+    println!(
+        "x4  (SRL)        : {:11} (Expected:    11259359 / 0x00ABCDDF)",
+        cpu.registers[4]
+    );
+    println!(
+        "x5  (SLT)        : {:11} (Expected:           1)",
+        cpu.registers[5]
+    );
+    println!(
+        "x6  (SLTU)       : {:11} (Expected:           0)",
+        cpu.registers[6]
+    );
+    println!(
+        "x8  (LB)         : {:11} (Expected:         -16)",
+        cpu.registers[8]
+    );
+    println!(
+        "x9  (LBU)        : {:11} (Expected:         240)",
+        cpu.registers[9]
+    );
+    println!(
+        "x10 (LH)         : {:11} (Expected:      -21555)",
+        cpu.registers[10]
+    );
+    println!(
+        "x11 (LHU)        : {:11} (Expected:       43981)",
+        cpu.registers[11]
+    );
+    println!(
+        "x13 (SB + LW)    : {:11} (Expected: -1412606480 / 0xABCD55F0)",
+        cpu.registers[13]
+    );
+    println!(
+        "x14 (Loop Cnt)   : {:11} (Expected:           0)",
+        cpu.registers[14]
+    );
+    println!(
+        "x15 (Loop Sum)   : {:11} (Expected:           6)",
+        cpu.registers[15]
+    );
+    println!(
+        "x16 (JAL Link)   : {:11} (Expected:          88 / 0x58)",
+        cpu.registers[16]
+    );
+    println!(
+        "x17 (Post-Ret)   : {:11} (Expected:          99)",
+        cpu.registers[17]
+    );
+    println!(
+        "x18 (AUIPC)      : {:11} (Expected:        4192 / 0x1060)",
+        cpu.registers[18]
+    );
+    println!(
+        "x19 (Subroutine) : {:11} (Expected:        4186)",
+        cpu.registers[19]
+    );
+    println!(
+        "x20 (JALR Link)  : {:11} (Expected:         108 / 0x6C)",
+        cpu.registers[20]
+    );
 }
