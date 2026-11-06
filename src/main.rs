@@ -24,12 +24,12 @@ impl CPU {
         inst_bytes.copy_from_slice(&self.memory[pc_usize..pc_usize + 4]);
         let instruction: u32 = u32::from_le_bytes(inst_bytes);
 
-        let opcode = instruction & 0x7f;
-        let rd = (instruction >> 7) & 0x1f;
-        let funct3 = (instruction >> 12) & 0x07;
-        let rs1 = (instruction >> 15) & 0x1f;
-        let rs2 = (instruction >> 20) & 0x1f;
-        let funct7 = (instruction >> 25) & 0x7f;
+        let opcode: u32 = instruction & 0x7f;
+        let rd: u32 = (instruction >> 7) & 0x1f;
+        let funct3: u32 = (instruction >> 12) & 0x07;
+        let rs1: u32 = (instruction >> 15) & 0x1f;
+        let rs2: u32 = (instruction >> 20) & 0x1f;
+        let funct7: u32 = (instruction >> 25) & 0x7f;
 
         match opcode {
             0x33 => {
@@ -125,7 +125,8 @@ impl CPU {
                 }
             }
             0x13 => {
-                let imm = ((funct7 << 5) & rs2) as i32;
+                let immu = (funct7 << 5) & rs2;
+                let imm = ((immu << 20) as i32) >> 20;
                 match funct3 {
                     0x0 => {
                         // ADDI
@@ -194,7 +195,8 @@ impl CPU {
                 }
             }
             0x03 => {
-                let imm = ((funct7 << 5) & rs2) as i32;
+                let immu = (funct7 << 5) & rs2;
+                let imm = ((immu << 20) as i32) >> 20;
                 match funct3 {
                     0x0 => {
                         // LB
@@ -250,7 +252,8 @@ impl CPU {
                 }
             }
             0x23 => {
-                let imm = ((funct7 << 5) & rd) as i32;
+                let immu = (funct7 << 5) & rs2;
+                let imm = ((immu << 20) as i32) >> 20;
                 match funct3 {
                     0x0 => {
                         // SB
@@ -292,20 +295,68 @@ impl CPU {
                 }
             }
             0x63 => {
+                let immu = (funct7 << 5) & rs2;
+                let imm = (((immu << 20) as i32) >> 20) as u32;
                 match funct3 {
-                    0x0 => { // BEQ
+                    0x0 => {
+                        // BEQ
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        if x == y {
+                            self.pc += imm
+                        }
                     }
-                    0x1 => { // BNE
+                    0x1 => {
+                        // BNE
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        if x != y {
+                            self.pc += imm
+                        }
                     }
-                    0x4 => { // BLT
+                    0x4 => {
+                        // BLT
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        if x < y {
+                            self.pc += imm
+                        }
                     }
-                    0x5 => { // BGE
+                    0x5 => {
+                        // BGE
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        if x >= y {
+                            self.pc += imm
+                        }
                     }
-                    0x6 => { // BLTU
+                    0x6 => {
+                        // BLTU
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        if (x as u32) < (y as u32) {
+                            self.pc += imm
+                        }
                     }
-                    0x7 => { // BGEU
+                    0x7 => {
+                        // BGEU
+                        let x = self.registers[rs1 as usize];
+                        let y = self.registers[rs2 as usize];
+
+                        if (x as u32) >= (y as u32) {
+                            self.pc += imm
+                        }
                     }
-                    _ => { // Incorrect funct3
+                    _ => {
+                        // Incorrect funct3
+                        println!(
+                            "Incorrect funct3 provided (either 0x0, 0x1, 0x4, 0x5, 0x6, or 0x7)"
+                        );
                     }
                 }
             }
