@@ -125,7 +125,7 @@ impl CPU {
                 }
             }
             0x13 => {
-                let immu = (funct7 << 5) & rs2;
+                let immu = (funct7 << 5) | rs2;
                 let imm = ((immu << 20) as i32) >> 20;
                 match funct3 {
                     0x0 => {
@@ -195,7 +195,7 @@ impl CPU {
                 }
             }
             0x03 => {
-                let immu = (funct7 << 5) & rs2;
+                let immu = (funct7 << 5) | rs2;
                 let imm = ((immu << 20) as i32) >> 20;
                 match funct3 {
                     0x0 => {
@@ -252,7 +252,7 @@ impl CPU {
                 }
             }
             0x23 => {
-                let immu = (funct7 << 5) & rs2;
+                let immu = (funct7 << 5) | rs2;
                 let imm = ((immu << 20) as i32) >> 20;
                 match funct3 {
                     0x0 => {
@@ -295,7 +295,7 @@ impl CPU {
                 }
             }
             0x63 => {
-                let immu = (funct7 << 5) & rs2;
+                let immu = (funct7 << 5) | rs2;
                 let imm = (((immu << 20) as i32) >> 20) as u32;
                 match funct3 {
                     0x0 => {
@@ -371,7 +371,7 @@ impl CPU {
             }
             0x67 => {
                 // JALR
-                let immu = (funct7 << 5) & rs2;
+                let immu = (funct7 << 5) | rs2;
                 let imm = ((immu << 20) as i32) >> 20;
 
                 let x = self.registers[rs1 as usize];
