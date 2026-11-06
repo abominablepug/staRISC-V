@@ -194,18 +194,58 @@ impl CPU {
                 }
             }
             0x03 => {
+                let imm = ((funct7 << 5) & rs2) as i32;
                 match funct3 {
-                    0x0 => { // LB
+                    0x0 => {
+                        // LB
+                        let x = self.registers[rs1 as usize];
+                        let e_add = imm.wrapping_add(x) as usize;
+
+                        let mut e_byte = [0u8; 1];
+                        e_byte.copy_from_slice(&self.memory[e_add..e_add + 1]);
+
+                        self.registers[rd as usize] = i8::from_le_bytes(e_byte) as i32;
                     }
-                    0x1 => { // LH
+                    0x1 => {
+                        // LH
+                        let x = self.registers[rs1 as usize];
+                        let e_add = imm.wrapping_add(x) as usize;
+
+                        let mut e_half = [0u8; 2];
+                        e_half.copy_from_slice(&self.memory[e_add..e_add + 2]);
+
+                        self.registers[rd as usize] = i16::from_le_bytes(e_half) as i32;
                     }
-                    0x2 => { // LW
+                    0x2 => {
+                        // LW
+                        let x = self.registers[rs1 as usize];
+                        let e_add = imm.wrapping_add(x) as usize;
+
+                        let mut e_whole = [0u8; 4];
+                        e_whole.copy_from_slice(&self.memory[e_add..e_add + 4]);
+
+                        self.registers[rd as usize] = i32::from_le_bytes(e_whole);
                     }
-                    0x4 => { // LBU
+                    0x4 => {
+                        // LBU
+                        let x = self.registers[rs1 as usize];
+                        let e_add = imm.wrapping_add(x) as usize;
+
+                        self.registers[rd as usize] = self.memory[e_add] as i32;
                     }
-                    0x5 => { // LHU
+                    0x5 => {
+                        // LHU
+                        let x = self.registers[rs1 as usize];
+                        let e_add = imm.wrapping_add(x) as usize;
+
+                        let mut e_half = [0u8; 2];
+                        e_half.copy_from_slice(&self.memory[e_add..e_add + 2]);
+
+                        self.registers[rd as usize] = u16::from_le_bytes(e_half) as i32;
                     }
-                    _ => { // Incorrect funct3
+                    _ => {
+                        // Incorrect funct3
+                        println!("Incorrect funct3 provided (either 0x0, 0x1, 0x2, 0x4, or 0x5)");
                     }
                 }
             }
