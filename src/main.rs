@@ -381,9 +381,17 @@ impl CPU {
                 self.registers[rd as usize] = (self.pc + 4) as i32;
                 self.pc = target as u32;
             }
-            0x37 => { // LUI
+            0x37 => {
+                // LUI
+                let imm = (((((funct7 << 5) | rs2) << 5) | rs1) << 3) | funct3;
+
+                self.registers[rd as usize] = (imm << 12) as i32;
             }
-            0x17 => { // AUIPC
+            0x17 => {
+                // AUIPC
+                let imm = (((((funct7 << 5) | rs2) << 5) | rs1) << 3) | funct3;
+
+                self.registers[rd as usize] = (self.pc as i32) + (imm << 12) as i32;
             }
             0x73 => {
                 match funct3 {
