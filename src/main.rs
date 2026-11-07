@@ -448,12 +448,12 @@ fn main() {
     memory[0..program.len()].copy_from_slice(&program);
     let mut cpu = CPU::new(memory);
 
-    println!("Starting CPU Execution.");
+    println!("Starting CPU Execution.\n");
     for _ in 0..5000 {
         let pc = cpu.pc as usize;
         let instruction = u32::from_le_bytes(cpu.memory[pc..pc + 4].try_into().unwrap());
         if instruction == 0x0000_006f {
-            println!("\n CPU Halted Cleanly.");
+            println!("\nCPU Halted Cleanly.");
             break;
         }
         cpu.step();

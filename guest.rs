@@ -10,7 +10,7 @@ global_asm!(
     "_start:",
     "    li x5, 0x10000000", // Store UART in register x5
     "    li x6, 0x00",       // Store '0' in register x6 (index)
-    "    li x7, 0x2f",       // Store '47' in register x7
+    "    li x7, 0x0a",       // Store '10' in register x7
     "    li x8, 0x00",       // Store '0' in register x8 (first Fibonacci number)
     "    li x9, 0x01",       // Store '1' in register x9 (second Fibonacci number)
     "fibonacci:",
