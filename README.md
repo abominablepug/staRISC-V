@@ -49,5 +49,8 @@ Repeat steps 1 and 2 whenever the `guest.rs` file is changed.
 
 ## Example Output
 
-This example uses the Fibonacci Sequence program I wrote. Theoretically the size of the registers (32 bit) allows the program to calculate up to F<sub>46</sub>. Though for viewing purposes I reduced it.
-
+This example uses the Fibonacci Sequence program I wrote.
+<p align="center">
+   <img width="502" height="522" alt="screenshot_2026-11-07_14-53-43" src="https://github.com/user-attachments/assets/e9857ba0-7cb5-4820-b0b2-7cbcefcc2b1e" />
+</p>
+Theoretically the size of the registers (32 bit) allows the program to calculate up to F<sub>46</sub>. Though for viewing purposes I reduced it.
