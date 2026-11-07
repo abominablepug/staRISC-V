@@ -1,6 +1,6 @@
 # staRISC-V
 
-staRisc-V is a 32-bit RISC-V (RV32I) instruction set emulator written in Rust capable of processing and executing binaries.
+staRisc-V is a 32-bit RISC-V (RV32I) instruction set emulator written in Rust capable of processing and executing binaries. The name is space-themed because I like space!
 
 ---
 
