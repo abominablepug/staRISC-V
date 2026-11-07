@@ -265,7 +265,7 @@ impl CPU {
                         let bytes = y.to_ne_bytes();
                         for i in 0..1 {
                             if e_add + i == 0x1000_0000 {
-                                println!("{}", bytes[i] as char);
+                                println!("{}", bytes[i]);
                             } else {
                                 self.memory[e_add + i] = bytes[i];
                             }
@@ -280,7 +280,7 @@ impl CPU {
                         let bytes = y.to_ne_bytes();
                         for i in 0..2 {
                             if e_add + i == 0x1000_0000 {
-                                println!("{}", bytes[i] as char);
+                                println!("{}", bytes[i]);
                             } else {
                                 self.memory[e_add + i] = bytes[i];
                             }
@@ -292,11 +292,11 @@ impl CPU {
                         let e_add = imm.wrapping_add(x) as usize;
 
                         let y = self.registers[rs2 as usize];
-                        let bytes = y.to_ne_bytes();
-                        for i in 0..4 {
-                            if e_add + i == 0x1000_0000 {
-                                println!("{}", bytes[i] as char);
-                            } else {
+                        if e_add == 0x1000_0000 {
+                            println!("{}", y);
+                        } else {
+                            let bytes = y.to_le_bytes();
+                            for i in 0..4 {
                                 self.memory[e_add + i] = bytes[i];
                             }
                         }
@@ -442,100 +442,20 @@ impl CPU {
 }
 
 fn main() {
-    // 256 bytes of RAM initialized to 0
-    let mut memory: Vec<u8> = vec![0; 256];
+    let mut memory: Vec<u8> = vec![0; 65536]; // 64KB of memory
 
-    let program: [u8; 112] = [
-        0xB7, 0xE0, 0xCD, 0xAB, 0x93, 0x80, 0x00, 0xFF, 0x13, 0x01, 0x80, 0x00, 0xB3, 0xD1, 0x20,
-        0x40, 0x33, 0xD2, 0x20, 0x00, 0xB3, 0xA2, 0x41, 0x00, 0x33, 0xB3, 0x41, 0x00, 0x93, 0x03,
-        0x00, 0x08, 0x23, 0xA0, 0x13, 0x00, 0x03, 0x84, 0x03, 0x00, 0x83, 0xC4, 0x03, 0x00, 0x03,
-        0x95, 0x23, 0x00, 0x83, 0xD5, 0x23, 0x00, 0x13, 0x06, 0x50, 0x05, 0xA3, 0x80, 0xC3, 0x00,
-        0x83, 0xA6, 0x03, 0x00, 0x13, 0x07, 0x30, 0x00, 0x93, 0x07, 0x00, 0x00, 0xB3, 0x87, 0xE7,
-        0x00, 0x13, 0x07, 0xF7, 0xFF, 0xE3, 0x1C, 0x07, 0xFE, 0x6F, 0x08, 0xC0, 0x00, 0x93, 0x08,
-        0x30, 0x06, 0x6F, 0x00, 0x00, 0x01, 0x17, 0x19, 0x00, 0x00, 0xB3, 0x09, 0xF9, 0x40, 0x67,
-        0x0A, 0x18, 0x00, 0x6F, 0x00, 0x00, 0x00,
-    ];
+    let program = std::fs::read("guest.bin").expect("Failed to read guest.bin");
     memory[0..program.len()].copy_from_slice(&program);
     let mut cpu = CPU::new(memory);
 
-    let mut cycles = 0;
-    println!("--- Executing Stress Test ---");
-    loop {
-        if cpu.pc == 0x6C || cycles > 50 {
-            println!("Halted at PC: 0x{:02X} after {} cycles\n", cpu.pc, cycles);
+    println!("Starting CPU Execution.");
+    for _ in 0..5000 {
+        let pc = cpu.pc as usize;
+        let instruction = u32::from_le_bytes(cpu.memory[pc..pc + 4].try_into().unwrap());
+        if instruction == 0x0000_006f {
+            println!("\n CPU Halted Cleanly.");
             break;
         }
         cpu.step();
-        cycles += 1;
     }
-
-    println!("--- Register Verification ---");
-    println!(
-        "x1  (LUI + ADDI) : {:11} (Expected: -1412571152 / 0xABCDDFF0)",
-        cpu.registers[1]
-    );
-    println!(
-        "x3  (SRA)        : {:11} (Expected:    -5517857 / 0xFFABCDDF)",
-        cpu.registers[3]
-    );
-    println!(
-        "x4  (SRL)        : {:11} (Expected:    11259359 / 0x00ABCDDF)",
-        cpu.registers[4]
-    );
-    println!(
-        "x5  (SLT)        : {:11} (Expected:           1)",
-        cpu.registers[5]
-    );
-    println!(
-        "x6  (SLTU)       : {:11} (Expected:           0)",
-        cpu.registers[6]
-    );
-    println!(
-        "x8  (LB)         : {:11} (Expected:         -16)",
-        cpu.registers[8]
-    );
-    println!(
-        "x9  (LBU)        : {:11} (Expected:         240)",
-        cpu.registers[9]
-    );
-    println!(
-        "x10 (LH)         : {:11} (Expected:      -21555)",
-        cpu.registers[10]
-    );
-    println!(
-        "x11 (LHU)        : {:11} (Expected:       43981)",
-        cpu.registers[11]
-    );
-    println!(
-        "x13 (SB + LW)    : {:11} (Expected: -1412606480 / 0xABCD55F0)",
-        cpu.registers[13]
-    );
-    println!(
-        "x14 (Loop Cnt)   : {:11} (Expected:           0)",
-        cpu.registers[14]
-    );
-    println!(
-        "x15 (Loop Sum)   : {:11} (Expected:           6)",
-        cpu.registers[15]
-    );
-    println!(
-        "x16 (JAL Link)   : {:11} (Expected:          88 / 0x58)",
-        cpu.registers[16]
-    );
-    println!(
-        "x17 (Post-Ret)   : {:11} (Expected:          99)",
-        cpu.registers[17]
-    );
-    println!(
-        "x18 (AUIPC)      : {:11} (Expected:        4192 / 0x1060)",
-        cpu.registers[18]
-    );
-    println!(
-        "x19 (Subroutine) : {:11} (Expected:        4186)",
-        cpu.registers[19]
-    );
-    println!(
-        "x20 (JALR Link)  : {:11} (Expected:         108 / 0x6C)",
-        cpu.registers[20]
-    );
 }
